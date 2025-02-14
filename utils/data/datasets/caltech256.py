@@ -24,8 +24,8 @@ from . import config as cfg
 
 class Caltech256(ImageFolder):
 
-    def __init__(self, train=True, transform=None, target_transform=None,**kwargs):
-        root = osp.join(cfg.DATASET_ROOT, '256_ObjectCategories')
+    def __init__(self, root:str, train=True, transform=None, target_transform=None, random_seed:int=27, **kwargs):
+        root = osp.join(root, '256_ObjectCategories')
         if not osp.exists(root):
             raise ValueError('Dataset not found at {}. Please download it from {}.'.format(
                 root, 'https://data.caltech.edu/records/nyy15-4j048'
@@ -61,7 +61,7 @@ class Caltech256(ImageFolder):
 
         # Use this random seed to make partition consistent
         prev_state = np.random.get_state()
-        np.random.seed(cfg.DS_SEED)
+        np.random.seed(random_seed)
 
         # ----------------- Create mapping: classidx -> idx
         classidx_to_idxs = dd(list)

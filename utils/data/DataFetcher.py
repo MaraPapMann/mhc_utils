@@ -40,15 +40,17 @@ class DataFetcher(object):
             'EMNIST-LETTERS', 'emnist-letters', 'EMNISTLETTERS', 'emnistletters',
             'cifar-10', 'cifar10', 'CIFAR-10', 'CIFAR10',
             'cifar-100', 'cifar100', 'CIFAR-100', 'CIFAR100',
-            'cifar10ext', 'cifar-10-ext', 
-            'cifar100ext', 'cifar-100-ext',
+            'cifar10ext', 'cifar-10-ext', 'CIFAR10EXT', 'CIFAR-10-EXT'
+            'cifar100ext', 'cifar-100-ext', 'CIFAR100EXT', 'CIFAR-100-EXT'
             'cinic10', 'CINIC10', 'cinic-10', 'CINIC-10',
-            'fashionmnist', 
+            'fashionmnist', 'FASHIONMNIST'
             'gtsrb', 'GTSRB'
-            'imagenette', 'ImageNette',
-            'Caltech256',
+            'imagenette', 'IMAGENETTE',
+            'caltech256', 'CALTECH256'
             ]
         assert dataset in self.valid_datasets, f'Choose a valid dataset from the followings:\n {self.valid_datasets}'
+        self.train_ds = None
+        self.test_ds = None
 
         # MNIST
         if dataset in ['mnist', 'MNIST']:
@@ -98,6 +100,31 @@ class DataFetcher(object):
             transform = transforms.Compose(transform)
             self.train_ds = datasets.EMNIST(root, split='letters', train=True, transform=transform, download=download)
             self.test_ds = datasets.EMNIST(root, split='letters', train=False, transform=transform, download=download)
+        
+        # FashionMNIST
+        if dataset in ['fashionmnist', 'FASHIONMNIST']:
+            # Load train set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.2860,), (0.3530,)),
+            ]
+            if gray_to_rgb:
+                transform.append(transforms.Lambda(lambda x: x.repeat(3, 1, 1)))
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.train_ds = datasets.FashionMNIST(root, True, transform, download=download)
+            # Load test set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.2860,), (0.3530,)),
+            ]
+            if gray_to_rgb:
+                transform.append(transforms.Lambda(lambda x: x.repeat(3, 1, 1)))
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.test_ds = datasets.FashionMNIST(root, False, transform, download=download)
 
         # CIFAR-10
         if dataset in ['cifar10', 'cifar-10', 'CIFAR-10', 'CIFAR10']:
@@ -127,31 +154,155 @@ class DataFetcher(object):
 
         # CINIC-10
         if dataset in ['cinic10', 'cinic-10', 'CINIC10', 'CINIC-10']:
-            if transform is None:
-                transform = [
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
-                    ]
-                if resize:
-                    transform.append(transforms.Resize((resize, resize)))
-                if is_augmented:
-                    transform.append(transforms.RandomCrop(32, padding=4))
-                    transform.append(transforms.RandomHorizontalFlip())
-                transform=transforms.Compose(transform)
-                self.train_ds = ImageFolder(root=opt.os.join(root, 'train'), transform=transform)
-            else:
-                transform = [
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
+            # Load train set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
                 ]
-                if resize:
-                    transform.append(transforms.Resize((resize, resize)))
-                transform = transforms.Compose(transform)
-                self.test_ds = ImageFolder(root=opt.os.join(root, 'test'), transform=transform)
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            if is_augmented:
+                transform.append(transforms.RandomCrop(32, padding=4))
+                transform.append(transforms.RandomHorizontalFlip())
+            transform=transforms.Compose(transform)
+            self.train_ds = ImageFolder(root=opt.os.join(root, 'train'), transform=transform)
+            
+            # Load test set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.test_ds = ImageFolder(root=opt.os.join(root, 'test'), transform=transform)
+        
+        # CIFAR-100
+        if dataset in ['cifar100', 'cifar-100', 'CIFAR100', 'CIFAR-100']:
+            # Load train set
+            transform = [
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5071, 0.4866, 0.4409), (0.2673, 0.2564, 0.2762)),
+                ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            if is_augmented:
+                transform.append(transforms.RandomCrop(32, padding=4))
+                transform.append(transforms.RandomHorizontalFlip())
+            transform = transforms.Compose(transform)
+            self.train_ds = datasets.CIFAR100(root, True, transform, download=download)
+
+            # Load test set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5071, 0.4866, 0.4409), (0.2673, 0.2564, 0.2762)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.test_ds = datasets.CIFAR100(root, False, transform, download=download)
+        
+        # CIFAR-10E
+        if dataset in ['cifar10ext', 'cifar-10-ext', 'CIFAR10EXT', 'CIFAR-10-EXT']:
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.4715, 0.4701, 0.4249), (0.2409, 0.2352, 0.2593)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.train_ds = datasets.ImageFolder(root, transform)
+        
+        # CIFAR-100E
+        if dataset in ['cifar100ext', 'cifar-100-ext', 'CIFAR100EXT', 'CIFAR-100-EXT']:
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.4672, 0.4581, 0.4093), (0.2580, 0.2470, 0.2671)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.train_ds = datasets.ImageFolder(root, transform)
+
+        # GTSRB
+        if dataset in ['gtsrb', 'GTSRB']:
+            # Load train set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.3805, 0.3484, 0.3574), (0.3031, 0.2950, 0.3007)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            if is_augmented:
+                transform.append(transforms.RandomCrop(32, padding=4))
+                transform.append(transforms.RandomHorizontalFlip())
+            transform = transforms.Compose(transform)
+            self.train_ds = datasets.GTSRB(root, 'train', transform, download=download)
+            
+            # Load test set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.3805, 0.3484, 0.3574), (0.3031, 0.2950, 0.3007)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.test_ds = datasets.GTSRB(root, 'test', transform, download=download)
+        
+        # ImageNette
+        if dataset in ['imagenette', 'IMAGENETTE']:
+            # Load train set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.4672, 0.4581, 0.4093), (0.2580, 0.2470, 0.2671)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            if is_augmented:
+                transform.append(transforms.RandomCrop(128, padding=16))
+                transform.append(transforms.RandomHorizontalFlip())
+            transform = transforms.Compose(transform)
+            self.train_ds = datasets.ImageFolder(root+'/train', transform)
+            # Load test set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize((0.4672, 0.4581, 0.4093), (0.2580, 0.2470, 0.2671)),
+            ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))
+            transform = transforms.Compose(transform)
+            self.test_ds = datasets.ImageFolder(root+'/val', transform)
+        
+        # Caltech256
+        if dataset == 'Caltech256':
+            # Load train set
+            transform = [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    std=[0.229, 0.224, 0.225]),
+                ]
+            if resize:
+                transform.append(transforms.Resize((resize, resize)))  # 224
+            if is_augmented:
+                transform.append(transforms.RandomCrop(224, padding=16))
+                transform.append(transforms.RandomHorizontalFlip())
+            transform = transforms.Compose(transform),
+            self.train_ds = DS.Caltech256(root, True, transform, target_transform=None, download=True, random_seed=27)
+            # Load test set
+            transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    std=[0.229, 0.224, 0.225]),
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+            ])
+            D = DS.Caltech256(root, False, transform, target_transform=None, download=True, random_seed=27)
 
         # Build loader
-        self.train_loader = DataLoader(self.train_ds, batch_size=batch_size, shuffle=shuffle_train, pin_memory=True, drop_last=drop_last_train)
-        self.test_loader = DataLoader(self.test_ds, batch_size=batch_size, shuffle=shuffle_test, pin_memory=True, drop_last=drop_last_test)
+        if self.train_ds is not None:
+            self.train_loader = DataLoader(self.train_ds, batch_size=batch_size, shuffle=shuffle_train, pin_memory=True, drop_last=drop_last_train)
+        if self.test_ds is not None:
+            self.test_loader = DataLoader(self.test_ds, batch_size=batch_size, shuffle=shuffle_test, pin_memory=True, drop_last=drop_last_test)
 
         return
     
@@ -170,104 +321,7 @@ class DataFetcher(object):
 
     @staticmethod
     def load_dataset(dataset:str, root:str, train:bool, download:bool, resize:int, return_loader:bool=False, transform=None, **kwargs):
-        
-        # CIFAR-10E
-        if dataset == 'cifar10ext':
-            transform = transforms.Compose([
-                transforms.Resize((resize, resize)),
-                transforms.ToTensor(),
-                transforms.Normalize((0.4715, 0.4701, 0.4249), (0.2409, 0.2352, 0.2593)),
-            ])
-            D = datasets.ImageFolder(root+'/CIFAR10_EXT', transform)
-        
-        # CIFAR-100
-        if dataset in ['cifar100', 'CIFAR-100', 'CIFAR100']:
-            if train:
-                transform = transforms.Compose([
-                    transforms.Resize((resize, resize)),
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.5071, 0.4866, 0.4409), (0.2673, 0.2564, 0.2762)),
-                    transforms.RandomCrop(32, padding=4),
-                    transforms.RandomHorizontalFlip(),
-                ])
-                D = datasets.CIFAR100(root, train, transform, download=download)
-            else:
-                transform = transforms.Compose([
-                    transforms.Resize((resize, resize)),
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.5071, 0.4866, 0.4409), (0.2673, 0.2564, 0.2762)),
-                ])
-                D = datasets.CIFAR100(root, train, transform, download=download)
-        
-        # CIFAR-100E
-        if dataset == 'cifar100ext':
-            transform = transforms.Compose([
-                transforms.Resize((resize, resize)),
-                transforms.ToTensor(),
-                transforms.Normalize((0.4672, 0.4581, 0.4093), (0.2580, 0.2470, 0.2671)),
-            ])
-            D = datasets.ImageFolder(root+'/CIFAR100_EXT', transform)
-        
-        # FashionMNIST
-        if dataset == 'fashionmnist':
-            transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.2860,), (0.3530,)),
-                transforms.Lambda(lambda x: x.repeat(3, 1, 1)), # Grayscale to RGB
-                transforms.Resize((resize, resize)),
-            ])
-            D = datasets.FashionMNIST(root, train, transform, download=download)
-        
-        # GTSRB
-        if dataset == 'gtsrb':
-            transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.3805, 0.3484, 0.3574), (0.3031, 0.2950, 0.3007)),
-                transforms.Resize((resize, resize)),
-                transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-            ])
-            if train:
-                D = datasets.GTSRB(root, 'train', transform, download=download)
-            else:
-                D = datasets.GTSRB(root, 'test', transform, download=download)
-        
-        # ImageNette
-        if dataset == 'imagenette':
-            transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.4672, 0.4581, 0.4093), (0.2580, 0.2470, 0.2671)),
-                transforms.Resize((resize, resize)),
-                transforms.RandomCrop(128, padding=16),
-                transforms.RandomHorizontalFlip(),
-            ])
-            if train:
-                D = datasets.ImageFolder(root+'/imagenette'+'/train', transform)
-            else:
-                D = datasets.ImageFolder(root+'/imagenette'+'/val', transform)
-        
-        # Caltech256
-        if dataset == 'Caltech256':
-            if train:
-                transform = transforms.Compose([
-                    transforms.RandomResizedCrop(224),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                        std=[0.229, 0.224, 0.225]),
-                    ]),
-                D = DS.Caltech256(True, transform, target_transform=None, download=True)
-            else:
-                transform = transforms.Compose([
-                    transforms.Resize(256),
-                    transforms.CenterCrop(224),
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                        std=[0.229, 0.224, 0.225]),
-                ])
-                D = DS.Caltech256(False, transform, target_transform=None, download=True)
-        
-        return D
+        return 
 
     @staticmethod
     def get_subsets(D:Dataset, n_subsets:int, n_samples_per_subset:int):
